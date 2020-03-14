@@ -95,7 +95,7 @@ def add_hcup_ccs_2015_groups(diagnoses, definitions):
 
 
 def make_phenotype_label_matrix(phenotypes, stays=None):
-    phenotypes = phenotypes[['ICUSTAY_ID', 'HCUP_CCS_2015']].iloc[phenotypes.USE_IN_BENCHMARK > 0].drop_duplicates()
+    phenotypes = phenotypes[['ICUSTAY_ID', 'HCUP_CCS_2015']].loc[phenotypes.USE_IN_BENCHMARK > 0].drop_duplicates()
     phenotypes['VALUE'] = 1
     phenotypes = phenotypes.pivot(index='ICUSTAY_ID', columns='HCUP_CCS_2015', values='VALUE')
     if stays is not None:
