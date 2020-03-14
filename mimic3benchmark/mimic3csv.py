@@ -142,7 +142,7 @@ def break_up_diagnoses_by_subject(diagnoses, output_path, subjects=None, verbose
         except:
             pass
 
-        diagnoses.iloc[diagnoses.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID', 'SEQ_NUM']).to_csv(os.path.join(dn, 'diagnoses.csv'), index=False)
+        diagnoses.loc[diagnoses.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID', 'SEQ_NUM']).to_csv(os.path.join(dn, 'diagnoses.csv'), index=False)
     if verbose:
         sys.stdout.write('DONE!\n')
 

@@ -111,8 +111,8 @@ def read_itemid_to_variable_map(fn, variable_column='LEVEL2'):
     var_map = dataframe_from_csv(fn, index_col=None).fillna('').astype(str)
     # var_map[variable_column] = var_map[variable_column].apply(lambda s: s.lower())
     var_map.COUNT = var_map.COUNT.astype(int)
-    var_map = var_map.iloc[(var_map[variable_column] != '') & (var_map.COUNT > 0)]
-    var_map = var_map.iloc[(var_map.STATUS == 'ready')]
+    var_map = var_map.loc[(var_map[variable_column] != '') & (var_map.COUNT > 0)]
+    var_map = var_map.loc[(var_map.STATUS == 'ready')]
     var_map.ITEMID = var_map.ITEMID.astype(int)
     var_map = var_map[[variable_column, 'ITEMID', 'MIMIC LABEL']].set_index('ITEMID')
     return var_map.rename(columns={variable_column: 'VARIABLE', 'MIMIC LABEL': 'MIMIC_LABEL'})
@@ -140,11 +140,11 @@ def remove_outliers_for_variable(events, variable, ranges):
         return events
     idx = (events.VARIABLE == variable)
     V = events.VALUE[idx]
-    V.iloc[V < ranges.OUTLIER_LOW[variable]] = np.nan
-    V.iloc[V > ranges.OUTLIER_HIGH[variable]] = np.nan
-    V.iloc[V < ranges.VALID_LOW[variable]] = ranges.VALID_LOW[variable]
-    V.iloc[V > ranges.VALID_HIGH[variable]] = ranges.VALID_HIGH[variable]
-    events.iloc[idx, 'VALUE'] = V
+    V.loc[V < ranges.OUTLIER_LOW[variable]] = np.nan
+    V.loc[V > ranges.OUTLIER_HIGH[variable]] = np.nan
+    V.loc[V < ranges.VALID_LOW[variable]] = ranges.VALID_LOW[variable]
+    V.loc[V > ranges.VALID_HIGH[variable]] = ranges.VALID_HIGH[variable]
+    events.loc[idx, 'VALUE'] = V
     return events
 
 
@@ -152,14 +152,14 @@ def remove_outliers_for_variable(events, variable, ranges):
 def clean_sbp(df):
     v = df.VALUE.astype(str)
     idx = v.apply(lambda s: '/' in s)
-    v.iloc[idx] = v[idx].apply(lambda s: re.match('^(\d+)/(\d+)$', s).group(1))
+    v.loc[idx] = v[idx].apply(lambda s: re.match('^(\d+)/(\d+)$', s).group(1))
     return v.astype(float)
 
 
 def clean_dbp(df):
     v = df.VALUE.astype(str)
     idx = v.apply(lambda s: '/' in s)
-    v.iloc[idx] = v[idx].apply(lambda s: re.match('^(\d+)/(\d+)$', s).group(2))
+    v.loc[idx] = v[idx].apply(lambda s: re.match('^(\d+)/(\d+)$', s).group(2))
     return v.astype(float)
 
 
@@ -172,8 +172,8 @@ def clean_crr(df):
     # raises an exception, to fix this we change dtype to str
     df.VALUE = df.VALUE.astype(str)
 
-    v.iloc[(df.VALUE == 'Normal <3 secs') | (df.VALUE == 'Brisk')] = 0
-    v.iloc[(df.VALUE == 'Abnormal >3 secs') | (df.VALUE == 'Delayed')] = 1
+    v.loc[(df.VALUE == 'Normal <3 secs') | (df.VALUE == 'Brisk')] = 0
+    v.loc[(df.VALUE == 'Abnormal >3 secs') | (df.VALUE == 'Delayed')] = 1
     return v
 
 
@@ -198,7 +198,7 @@ def clean_fio2(df):
     is_str = np.array(map(lambda x: type(x) == str, list(df.VALUE)), dtype=np.bool)
     idx = df.VALUEUOM.fillna('').apply(lambda s: 'torr' not in s.lower()) & (is_str | (~is_str & (v > 1.0)))
 
-    v.iloc[idx] = v[idx] / 100.
+    v.loc[idx] = v[idx] / 100.
     return v
 
 
@@ -206,7 +206,7 @@ def clean_fio2(df):
 def clean_lab(df):
     v = df.VALUE
     idx = v.apply(lambda s: type(s) is str and not re.match('^(\d+(\.\d*)?|\.\d+)$', s))
-    v.iloc[idx] = np.nan
+    v.loc[idx] = np.nan
     return v.astype(float)
 
 
@@ -215,11 +215,11 @@ def clean_o2sat(df):
     # change "ERROR" to NaN
     v = df.VALUE
     idx = v.apply(lambda s: type(s) is str and not re.match('^(\d+(\.\d*)?|\.\d+)$', s))
-    v.iloc[idx] = np.nan
+    v.loc[idx] = np.nan
 
     v = v.astype(float)
     idx = (v <= 1)
-    v.iloc[idx] = v[idx] * 100.
+    v.loc[idx] = v[idx] * 100.
     return v
 
 
@@ -227,7 +227,7 @@ def clean_o2sat(df):
 def clean_temperature(df):
     v = df.VALUE.astype(float)
     idx = df.VALUEUOM.fillna('').apply(lambda s: 'F' in s.lower()) | df.MIMIC_LABEL.apply(lambda s: 'F' in s.lower()) | (v >= 79)
-    v.iloc[idx] = (v[idx] - 32) * 5. / 9
+    v.loc[idx] = (v[idx] - 32) * 5. / 9
     return v
 
 
@@ -237,10 +237,10 @@ def clean_weight(df):
     v = df.VALUE.astype(float)
     # ounces
     idx = df.VALUEUOM.fillna('').apply(lambda s: 'oz' in s.lower()) | df.MIMIC_LABEL.apply(lambda s: 'oz' in s.lower())
-    v.iloc[idx] = v[idx] / 16.
+    v.loc[idx] = v[idx] / 16.
     # pounds
     idx = idx | df.VALUEUOM.fillna('').apply(lambda s: 'lb' in s.lower()) | df.MIMIC_LABEL.apply(lambda s: 'lb' in s.lower())
-    v.iloc[idx] = v[idx] * 0.453592
+    v.loc[idx] = v[idx] * 0.453592
     return v
 
 
@@ -249,7 +249,7 @@ def clean_weight(df):
 def clean_height(df):
     v = df.VALUE.astype(float)
     idx = df.VALUEUOM.fillna('').apply(lambda s: 'in' in s.lower()) | df.MIMIC_LABEL.apply(lambda s: 'in' in s.lower())
-    v.iloc[idx] = np.round(v[idx] * 2.54)
+    v.loc[idx] = np.round(v[idx] * 2.54)
     return v
 
 
@@ -282,10 +282,11 @@ def clean_events(events):
     for var_name, clean_fn in clean_fns.items():
         idx = (events.VARIABLE == var_name)
         try:
-            events.iloc[idx, 'VALUE'] = clean_fn(events.iloc[idx])
+            events.loc[idx, 'VALUE'] = clean_fn(events.loc[idx])
         except Exception as e:
+            raise e
             print("Exception in clean_events:", clean_fn.__name__, e)
             print("number of rows:", np.sum(idx))
-            print("values:", events.iloc[idx])
+            print("values:", events.loc[idx])
             exit()
-    return events.iloc[events.VALUE.notnull()]
+    return events.loc[events.VALUE.notnull()]
